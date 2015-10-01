@@ -57,6 +57,20 @@ var nodeconf = function(ip, port, hub) {
     };
 };
 
+var keepAlive = function(ip, port, hub) {
+   setInterval(function() {
+      var page = require('webpage').create();
+      page.open(hub + 'grid/api/proxy?id=' + ip + ':' + port, {
+                operation: 'get',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            }, function(status) {
+               console.log(page.framePlainText);
+            });
+   }, 5000);
+};
+
 module.exports = {
     register: function(ip, port, hub) {
         try {
@@ -78,11 +92,12 @@ module.exports = {
                     console.error("Unable to contact grid " + hub + ": " + status);
                     phantom.exit(1);
                 }
-                if(page.framePlainText !== "ok") {
+                if(page.framePlainText.toLowerCase().indexOf('ok') === -1) {
                     console.error("Problem registering with grid " + hub + ": " + page.content);
                     phantom.exit(1);
                 }
                 console.log("Registered with grid hub: " + hub + " (" + page.framePlainText + ")");
+                keepAlive(ip, port, hub);
             });
         } catch (e) {
             throw new Error("Could not register to Selenium Grid Hub: " + hub);
